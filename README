@@ -1,0 +1,66 @@
+
+==== NAME ====
+
+Posy::Plugin::FileStats - Posy plugin to cache file statistics
+
+
+==== VERSION ====
+
+This describes version ``0.40'' of Posy::Plugin::FileStats.
+
+
+==== DESCRIPTION ====
+
+This is a "utility" plugin to be used by other plugins; it maintains a list
+(and cache) of file statistics in $self->{file_stats} which can be used by
+other plugins (such as Posy::Plugin::LinkSized).
+
+It provides an action method "index_file_stats" which should be put after
+"index_entries" in the action list.
+
+The file_stats hash is referenced by the full name of the file.
+
+The statistics kept are:
+
+size
+The size of the file in bytes.
+
+size_string
+The size of the file as a string (with K or M as appropriate).
+
+mime_type
+The MIME type of the file.
+
+mtime
+For convenience, copies the mtime from $self->{files} or $self->{others} for
+the given file.
+
+word_count
+The word-count of text and HTML files.
+
+
+==== REQUIRES ====
+
+    Posy
+    Posy::Core
+
+    File::stat
+    File::MMagic
+
+    Test::More
+
+
+==== AUTHOR ====
+
+    Kathryn Andersen (RUBYKAT)
+    perlkat AT katspace dot com
+    http://www.katspace.com
+
+
+==== COPYRIGHT AND LICENCE ====
+
+Copyright (c) 2005 by Kathryn Andersen
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
