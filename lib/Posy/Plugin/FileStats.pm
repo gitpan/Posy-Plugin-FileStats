@@ -3,15 +3,15 @@ use strict;
 
 =head1 NAME
 
-Posy::Plugin::FileStats - Posy plugin to cache file statistics
+Posy::Plugin::FileStats - Posy plugin to cache file statistics.
 
 =head1 VERSION
 
-This describes version B<0.40> of Posy::Plugin::FileStats.
+This describes version B<0.5001> of Posy::Plugin::FileStats.
 
 =cut
 
-our $VERSION = '0.40';
+our $VERSION = '0.5001';
 
 =head1 SYNOPSIS
 
@@ -56,8 +56,7 @@ The MIME type of the file.
 
 =item mtime
 
-For convenience, copies the mtime from $self->{files} or $self->{others}
-for the given file.
+The modification time of the file.
 
 =item word_count
 
@@ -65,7 +64,7 @@ The word-count of text and HTML files.
 
 =back
 
-=head1 Configuration
+=head2 Configuration
 
 The following config values can be set:
 
@@ -75,6 +74,39 @@ The following config values can be set:
 
 The full name of the file to be used to store the cache.
 Most people can just leave this at the default.
+
+=back
+
+=head2 Parameters
+
+This plugin will do reindexing the first time it is run, or
+if it detects that there are files in the main file index which
+are new.  Full or partial reindexing can be forced by setting the
+the following parameters.
+
+=over
+
+=item reindex
+
+    /cgi-bin/posy.cgi?reindex=1
+
+Does a full reindex of all files in the data_dir directory.
+
+=item reindex_cat
+
+    /cgi-bin/posy.cgi?reindex_cat=stories/buffy
+
+Does an additive reindex of all files under the given category.  Does not
+delete files from the index.  Useful to call when you know you've just
+updated/added files in a particular category index, and don't want to have
+to reindex the whole site.
+
+=item delindex
+
+    /cgi-bin/posy.cgi?delindex=1
+
+Deletes files from the index if they no longer exist.  Useful when you've
+deleted files but don't want to have to reindex the whole site.
 
 =back
 
@@ -124,51 +156,94 @@ sub index_file_stats {
     {
 	$reindex = 1 if (!$self->_fs_read_cache());
     }
-    # If any files are in $self->{files} but not in
-    # $self->{file_stats}, reindex
-    for my $ffn (keys %{$self->{files}})
-    { exists $self->{file_stats}->{$self->{files}->{$ffn}->{fullname}}
-	or do { $reindex++; delete $self->{file_stats}->{
-	    $self->{files}->{$ffn}->{fullname}} }; }
-    # If any files are in $self->{others} but not in
-    # $self->{file_stats}, reindex
-    for my $fln (keys %{$self->{others}})
-    { exists $self->{file_stats}->{$fln}
-	or do { $reindex++; delete $self->{file_stats}->{$fln} }; }
-
-    if ($reindex) {
-	foreach my $file_id (keys %{$self->{files}})
+    # check for a partial reindex
+    my $reindex_cat = $self->param('reindex_cat');
+    # make sure there's no extraneous slashes
+    $reindex_cat =~ s{^/}{};
+    $reindex_cat =~ s{/$}{};
+    if (!$reindex
+	and $reindex_cat
+	and exists $self->{categories}->{$reindex_cat}
+	and defined $self->{categories}->{$reindex_cat})
+    {
+	$self->debug(1, "file_stats: reindexing $reindex_cat");
+	# do a partial reindex
+	while (my $file_id = each %{$self->{files}})
 	{
-	    my $fullname = $self->{files}->{$file_id}->{fullname};
-	    my $st = stat($fullname);
-
-	    $self->{file_stats}->{$fullname}->{size} = $st->size;
-	    $self->{file_stats}->{$fullname}->{size_string} =
-		$self->_size_string($st->size);
-	    $self->{file_stats}->{$fullname}->{mime_type} =
-		$self->get_mime_type($fullname);
-	    $self->{file_stats}->{$fullname}->{word_count} =
-		$self->get_word_count($fullname,
-		$self->{file_stats}->{$fullname}->{mime_type});
-	    $self->{file_stats}->{$fullname}->{mtime} = 
-		$self->{files}->{$file_id}->{mtime};
+	    if (($self->{files}->{$file_id}->{cat_id} eq $reindex_cat)
+		or ($self->{files}->{$file_id}->{cat_id}
+		    =~ /^$reindex_cat/)
+	       )
+	    {
+		my $fullname = $self->{files}->{$file_id}->{fullname};
+		$self->_fs_set_stats($fullname);
+	    }
 	}
-	foreach my $fullname (keys %{$self->{others}})
+	while (my $fullname = each %{$self->{others}})
 	{
-	    my $st = stat($fullname);
-
-	    $self->{file_stats}->{$fullname}->{size} = $st->size;
-	    $self->{file_stats}->{$fullname}->{size_string} =
-		$self->_size_string($st->size);
-	    $self->{file_stats}->{$fullname}->{mime_type} =
-		$self->get_mime_type($fullname);
-	    $self->{file_stats}->{$fullname}->{word_count} =
-		$self->get_word_count($fullname,
-		$self->{file_stats}->{$fullname}->{mime_type});
-	    $self->{file_stats}->{$fullname}->{mtime} = 
-		$self->{others}->{$fullname};
+	    if (($self->{others}->{$fullname} eq $reindex_cat)
+		or ($self->{others}->{$fullname} =~ /^$reindex_cat/)
+	       )
+	    {
+		$self->_fs_set_stats($fullname);
+	    }
 	}
 	$self->_fs_save_cache();
+    }
+    elsif (!$reindex)
+    {
+	# If any files are in $self->{files} but not in
+	# $self->{file_stats}, set stats for them
+	my $newfiles = 0;
+	while (my $file_id = each %{$self->{files}})
+	{ exists $self->{file_stats}->{$self->{files}->{$file_id}->{fullname}}
+	    or do {
+		$newfiles++;
+		$self->_fs_set_stats($self->{files}->{$file_id}->{fullname});
+	    };
+	}
+	# If any files are in $self->{others} but not in
+	# $self->{file_stats}, set stats for them
+	while (my $fullname = each %{$self->{others}})
+	{ exists $self->{file_stats}->{$fullname}
+	    or do {
+		$newfiles++;
+		$self->_fs_set_stats($fullname);
+	    };
+	}
+	$self->debug(1, "FileStats: added $newfiles new files") if $newfiles;
+	$self->_fs_save_cache() if $newfiles;
+    }
+
+    if ($reindex) {
+	$self->{file_stats} = {};
+	$self->debug(1, "FileStats: reindexing ALL");
+	while (my $file_id = each %{$self->{files}})
+	{
+	    my $fullname = $self->{files}->{$file_id}->{fullname};
+	    $self->_fs_set_stats($fullname);
+	}
+	while (my $fullname = each %{$self->{others}})
+	{
+	    $self->_fs_set_stats($fullname);
+	}
+	$self->_fs_save_cache();
+    }
+    else
+    {
+	# If any files not available, delete them and just save the cache
+	if ($self->param('delindex'))
+	{
+	    $self->debug(1, "FileStats: checking for deleted files");
+	    my $deletions = 0;
+	    while (my $fullname = each %{$self->{file_stats}})
+	    { -f $fullname
+		or do { $deletions++; delete $self->{file_stats}->{$fullname} };
+	    }
+	    $self->debug(1, "FileStats: deleted $deletions gone files")
+		if $deletions;
+	    $self->_fs_save_cache() if $deletions;
+	}
     }
 } # index_file_stats
 
@@ -225,8 +300,11 @@ sub get_word_count {
 	open($fh, $fullname) or return 0;
 	my $data = <$fh>;
 	close($fh);
-	$data =~ s/<[^>]+>//sg; # remove HTML tags
-	my @words = split(' ', $data);
+	$data =~ m#<body[^>]*>(.*)</body>#is;
+	my $body = $1; # just the body
+	$body =~ s/<[^>]+>//sg; # remove HTML tags
+	$body =~ s/\s\s+/ /g;
+	my @words = split(' ', $body);
 	$word_count = @words;
     }
 
@@ -236,6 +314,37 @@ sub get_word_count {
 =head1 Private Methods
 
 Methods which may or may not be here in future.
+
+=head2 _fs_set_stats
+
+$self->_fs_set_stats($fullname);
+
+Set the stats for one file.
+
+=cut
+sub _fs_set_stats {
+    my $self = shift;
+    my $fullname = shift;
+
+    if (-f $fullname)
+    {
+	my $st = stat($fullname);
+
+	$self->{file_stats}->{$fullname}->{size} = $st->size;
+	$self->{file_stats}->{$fullname}->{size_string} =
+	    $self->_size_string($st->size);
+	$self->{file_stats}->{$fullname}->{mime_type} =
+	    $self->get_mime_type($fullname);
+	$self->{file_stats}->{$fullname}->{word_count} =
+	    $self->get_word_count($fullname,
+				  $self->{file_stats}->{$fullname}->{mime_type});
+	$self->{file_stats}->{$fullname}->{mtime} = $st->mtime;
+    }
+    else # does not exist, delete it
+    {
+	delete $self->{file_stats}->{$fullname};
+    }
+} # _fs_set_stats
 
 =head2 _size_string
 
@@ -323,6 +432,74 @@ sub _fs_save_cache {
     $self->debug(1, "FileStats: Saving caches");
     Storable::lock_store($self->{file_stats}, $self->{config}->{file_stats_cachefile});
 } # _fs_save_cache
+
+=head1 INSTALLATION
+
+Installation needs will vary depending on the particular setup a person
+has.
+
+=head2 Administrator, Automatic
+
+If you are the administrator of the system, then the dead simple method of
+installing the modules is to use the CPAN or CPANPLUS system.
+
+    cpanp -i Posy::Plugin::FileStats
+
+This will install this plugin in the usual places where modules get
+installed when one is using CPAN(PLUS).
+
+=head2 Administrator, By Hand
+
+If you are the administrator of the system, but don't wish to use the
+CPAN(PLUS) method, then this is for you.  Take the *.tar.gz file
+and untar it in a suitable directory.
+
+To install this module, run the following commands:
+
+    perl Build.PL
+    ./Build
+    ./Build test
+    ./Build install
+
+Or, if you're on a platform (like DOS or Windows) that doesn't like the
+"./" notation, you can do this:
+
+   perl Build.PL
+   perl Build
+   perl Build test
+   perl Build install
+
+=head2 User With Shell Access
+
+If you are a user on a system, and don't have root/administrator access,
+you need to install Posy somewhere other than the default place (since you
+don't have access to it).  However, if you have shell access to the system,
+then you can install it in your home directory.
+
+Say your home directory is "/home/fred", and you want to install the
+modules into a subdirectory called "perl".
+
+Download the *.tar.gz file and untar it in a suitable directory.
+
+    perl Build.PL --install_base /home/fred/perl
+    ./Build
+    ./Build test
+    ./Build install
+
+This will install the files underneath /home/fred/perl.
+
+You will then need to make sure that you alter the PERL5LIB variable to
+find the modules, and the PATH variable to find the scripts (posy_one,
+posy_static).
+
+Therefore you will need to change:
+your path, to include /home/fred/perl/script (where the script will be)
+
+	PATH=/home/fred/perl/script:${PATH}
+
+the PERL5LIB variable to add /home/fred/perl/lib
+
+	PERL5LIB=/home/fred/perl/lib:${PERL5LIB}
 
 =head1 REQUIRES
 

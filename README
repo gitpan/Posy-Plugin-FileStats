@@ -1,12 +1,12 @@
 
 ==== NAME ====
 
-Posy::Plugin::FileStats - Posy plugin to cache file statistics
+Posy::Plugin::FileStats - Posy plugin to cache file statistics.
 
 
 ==== VERSION ====
 
-This describes version ``0.40'' of Posy::Plugin::FileStats.
+This describes version ``0.5001'' of Posy::Plugin::FileStats.
 
 
 ==== DESCRIPTION ====
@@ -32,11 +32,116 @@ mime_type
 The MIME type of the file.
 
 mtime
-For convenience, copies the mtime from $self->{files} or $self->{others} for
-the given file.
+The modification time of the file.
 
 word_count
 The word-count of text and HTML files.
+
+
+==   Configuration   ==
+
+The following config values can be set:
+
+``file_stats_cachefile''
+The full name of the file to be used to store the cache. Most people can
+just leave this at the default.
+
+
+==   Parameters   ==
+
+This plugin will do reindexing the first time it is run, or if it detects
+that there are files in the main file index which are new. Full or partial
+reindexing can be forced by setting the the following parameters.
+
+reindex
+    /cgi-bin/posy.cgi?reindex=1
+
+Does a full reindex of all files in the data_dir directory.
+
+reindex_cat
+    /cgi-bin/posy.cgi?reindex_cat=stories/buffy
+
+Does an additive reindex of all files under the given category. Does not
+delete files from the index. Useful to call when you know you've just
+updated/added files in a particular category index, and don't want to have
+to reindex the whole site.
+
+delindex
+    /cgi-bin/posy.cgi?delindex=1
+
+Deletes files from the index if they no longer exist. Useful when you've
+deleted files but don't want to have to reindex the whole site.
+
+
+==== INSTALLATION ====
+
+Installation needs will vary depending on the particular setup a person has.
+
+
+==   Administrator, Automatic   ==
+
+If you are the administrator of the system, then the dead simple method of
+installing the modules is to use the CPAN or CPANPLUS system.
+
+    cpanp -i Posy::Plugin::FileStats
+
+This will install this plugin in the usual places where modules get
+installed when one is using CPAN(PLUS).
+
+
+==   Administrator, By Hand   ==
+
+If you are the administrator of the system, but don't wish to use the
+CPAN(PLUS) method, then this is for you. Take the *.tar.gz file and untar it
+in a suitable directory.
+
+To install this module, run the following commands:
+
+    perl Build.PL
+    ./Build
+    ./Build test
+    ./Build install
+
+Or, if you're on a platform (like DOS or Windows) that doesn't like the "./"
+notation, you can do this:
+
+   perl Build.PL
+   perl Build
+   perl Build test
+   perl Build install
+
+
+==   User With Shell Access   ==
+
+If you are a user on a system, and don't have root/administrator access, you
+need to install Posy somewhere other than the default place (since you don't
+have access to it). However, if you have shell access to the system, then
+you can install it in your home directory.
+
+Say your home directory is "/home/fred", and you want to install the modules
+into a subdirectory called "perl".
+
+Download the *.tar.gz file and untar it in a suitable directory.
+
+    perl Build.PL --install_base /home/fred/perl
+    ./Build
+    ./Build test
+    ./Build install
+
+This will install the files underneath /home/fred/perl.
+
+You will then need to make sure that you alter the PERL5LIB variable to find
+the modules, and the PATH variable to find the scripts (posy_one,
+posy_static).
+
+Therefore you will need to change: your path, to include
+/home/fred/perl/script (where the script will be)
+
+        PATH=/home/fred/perl/script:${PATH}
+
+the PERL5LIB variable to add /home/fred/perl/lib
+
+        PERL5LIB=/home/fred/perl/lib:${PERL5LIB}
 
 
 ==== REQUIRES ====

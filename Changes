@@ -1,6 +1,33 @@
 Revision history for Posy-Plugin-FileStats
 ==========================================
 
+0.5001 Sun 06 February 2005
+---------------------------
+
+  * (6 Feb 2005) fix for non-existant files
+  	If one is doing a partial reindex, one really needs to check
+  if the files exist, or you'll try to get stats for something that's not
+  there.
+
+0.50 Sun 06 February 2005
+-------------------------
+
+  * (6 Feb 2005) more selective reindexing
+    - full reindex is only done (a) if there are no cache data files
+      or (b) if the 'reindex' parameter is true.
+    - new 'reindex_cat' parameter will force a partial reindex; just of
+      the given category.
+    - new 'delindex' parameter will force a check for non-existant files
+      and delete them from the index.
+    - if a file is in the global indexs (files/others), and it's not in
+      this index, then will add its stats to this index.
+
+  * (6 Feb 2005) added INSTALLATION docs
+
+  * (5 Feb 2005) removed Makefile.PL
+
+  * (5 Feb 2005) word count in HTML body
+
 0.40 Sat 15 January 2005
 ------------------------
 

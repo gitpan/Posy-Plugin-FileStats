@@ -1,18 +1,18 @@
 --- #YAML:1.0
 name: Posy-Plugin-FileStats
-version: 0.40
+version: 0.5001
 author:
   - Kathryn Andersen
-abstract: Posy plugin to cache file statistics
+abstract: Posy plugin to cache file statistics.
 license: perl
 requires:
   File::MMagic: 1.22
   File::stat: 1
-  Posy: 0.4
+  Posy: 0.9
 build_requires:
   Test::More: 0
 provides:
   Posy::Plugin::FileStats:
     file: lib/Posy/Plugin/FileStats.pm
-    version: 0.40
+    version: 0.5001
 generated_by: Module::Build version 0.2607
