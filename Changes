@@ -1,6 +1,13 @@
 Revision history for Posy-Plugin-FileStats
 ==========================================
 
+0.5002 Tue 08 February 2005
+---------------------------
+
+  * (8 Feb 2005) fixed bug with directories
+  	At one point, it kept on trying to add the root directory
+  to it's file statistics.  So now it checks defensively.
+
 0.5001 Sun 06 February 2005
 ---------------------------
 

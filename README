@@ -6,7 +6,7 @@ Posy::Plugin::FileStats - Posy plugin to cache file statistics.
 
 ==== VERSION ====
 
-This describes version ``0.5001'' of Posy::Plugin::FileStats.
+This describes version ``0.5002'' of Posy::Plugin::FileStats.
 
 
 ==== DESCRIPTION ====

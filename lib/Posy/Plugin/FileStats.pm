@@ -7,11 +7,11 @@ Posy::Plugin::FileStats - Posy plugin to cache file statistics.
 
 =head1 VERSION
 
-This describes version B<0.5001> of Posy::Plugin::FileStats.
+This describes version B<0.5002> of Posy::Plugin::FileStats.
 
 =cut
 
-our $VERSION = '0.5001';
+our $VERSION = '0.5002';
 
 =head1 SYNOPSIS
 
@@ -200,15 +200,18 @@ sub index_file_stats {
 	    or do {
 		$newfiles++;
 		$self->_fs_set_stats($self->{files}->{$file_id}->{fullname});
+		$self->debug(2, "FileStats: added $file_id");
 	    };
 	}
 	# If any files are in $self->{others} but not in
 	# $self->{file_stats}, set stats for them
 	while (my $fullname = each %{$self->{others}})
 	{ exists $self->{file_stats}->{$fullname}
+	    or -d $fullname
 	    or do {
 		$newfiles++;
 		$self->_fs_set_stats($fullname);
+		$self->debug(2, "FileStats: added $fullname");
 	    };
 	}
 	$self->debug(1, "FileStats: added $newfiles new files") if $newfiles;

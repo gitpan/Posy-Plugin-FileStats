@@ -8,7 +8,7 @@ my $builder = Module::Build->new(
     dist_author         => 'Kathryn Andersen',
     dist_version_from   => 'lib/Posy/Plugin/FileStats.pm',
 	requires            => {
-	'Posy' => 0.90,
+	'Posy' => 0.91,
 	'File::stat' => 1.00,
 	'File::MMagic' => 1.22,
 	},
