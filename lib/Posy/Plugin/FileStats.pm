@@ -7,11 +7,11 @@ Posy::Plugin::FileStats - Posy plugin to cache file statistics.
 
 =head1 VERSION
 
-This describes version B<0.5002> of Posy::Plugin::FileStats.
+This describes version B<0.51> of Posy::Plugin::FileStats.
 
 =cut
 
-our $VERSION = '0.5002';
+our $VERSION = '0.51';
 
 =head1 SYNOPSIS
 
@@ -86,17 +86,25 @@ the following parameters.
 
 =over
 
+=item reindex_all
+
+    /cgi-bin/posy.cgi?reindex_all=1
+
+Does a full reindex of all files in the data_dir directory,
+clearing the old data and starting again.
+
 =item reindex
 
     /cgi-bin/posy.cgi?reindex=1
 
-Does a full reindex of all files in the data_dir directory.
+Does an additive reindex of all files in the data_dir directory;
+new files get added, data for existing files remains the same.
 
 =item reindex_cat
 
     /cgi-bin/posy.cgi?reindex_cat=stories/buffy
 
-Does an additive reindex of all files under the given category.  Does not
+Does a reindex of all files under the given category.  Does not
 delete files from the index.  Useful to call when you know you've just
 updated/added files in a particular category index, and don't want to have
 to reindex the whole site.
@@ -150,18 +158,19 @@ sub index_file_stats {
     my $self = shift;
     my $flow_state = shift;
 
+    my $reindex_all = $self->param('reindex_all');
     my $reindex = $self->param('reindex');
-    $reindex = 1 if (!$self->_fs_init_caching());
-    if (!$reindex)
+    $reindex_all = 1 if (!$self->_fs_init_caching());
+    if (!$reindex_all)
     {
-	$reindex = 1 if (!$self->_fs_read_cache());
+	$reindex_all = 1 if (!$self->_fs_read_cache());
     }
     # check for a partial reindex
     my $reindex_cat = $self->param('reindex_cat');
     # make sure there's no extraneous slashes
     $reindex_cat =~ s{^/}{};
     $reindex_cat =~ s{/$}{};
-    if (!$reindex
+    if (!$reindex_all
 	and $reindex_cat
 	and exists $self->{categories}->{$reindex_cat}
 	and defined $self->{categories}->{$reindex_cat})
@@ -190,7 +199,7 @@ sub index_file_stats {
 	}
 	$self->_fs_save_cache();
     }
-    elsif (!$reindex)
+    elsif (!$reindex_all)
     {
 	# If any files are in $self->{files} but not in
 	# $self->{file_stats}, set stats for them
@@ -218,7 +227,7 @@ sub index_file_stats {
 	$self->_fs_save_cache() if $newfiles;
     }
 
-    if ($reindex) {
+    if ($reindex_all) {
 	$self->{file_stats} = {};
 	$self->debug(1, "FileStats: reindexing ALL");
 	while (my $file_id = each %{$self->{files}})

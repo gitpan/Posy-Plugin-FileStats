@@ -6,7 +6,7 @@ Posy::Plugin::FileStats - Posy plugin to cache file statistics.
 
 ==== VERSION ====
 
-This describes version ``0.5002'' of Posy::Plugin::FileStats.
+This describes version ``0.51'' of Posy::Plugin::FileStats.
 
 
 ==== DESCRIPTION ====
@@ -53,18 +53,25 @@ This plugin will do reindexing the first time it is run, or if it detects
 that there are files in the main file index which are new. Full or partial
 reindexing can be forced by setting the the following parameters.
 
+reindex_all
+    /cgi-bin/posy.cgi?reindex_all=1
+
+Does a full reindex of all files in the data_dir directory, clearing the old
+data and starting again.
+
 reindex
     /cgi-bin/posy.cgi?reindex=1
 
-Does a full reindex of all files in the data_dir directory.
+Does an additive reindex of all files in the data_dir directory; new files
+get added, data for existing files remains the same.
 
 reindex_cat
     /cgi-bin/posy.cgi?reindex_cat=stories/buffy
 
-Does an additive reindex of all files under the given category. Does not
-delete files from the index. Useful to call when you know you've just
-updated/added files in a particular category index, and don't want to have
-to reindex the whole site.
+Does a reindex of all files under the given category. Does not delete files
+from the index. Useful to call when you know you've just updated/added files
+in a particular category index, and don't want to have to reindex the whole
+site.
 
 delindex
     /cgi-bin/posy.cgi?delindex=1

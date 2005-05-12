@@ -1,6 +1,14 @@
 Revision history for Posy-Plugin-FileStats
 ==========================================
 
+0.51 Thu 12 May 2005
+--------------------
+
+  * (12 May 2005) revamp reindexing
+  	Now "reindex" updates new files, "reindex_all" does all files.
+
+  * (12 May 2005) add Makefile.PL
+
 0.5002 Tue 08 February 2005
 ---------------------------
 
